@@ -121,7 +121,7 @@ private:
 
 		// Bindings to delegates
 		void InvaderDestroyed(int32 id);
-		void SquadDissolved(int32 val);
+		void SquadDissolved();
 		void SquadSuccessful();
 
 	

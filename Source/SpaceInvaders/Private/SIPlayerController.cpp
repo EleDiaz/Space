@@ -12,6 +12,8 @@ ASIPlayerController::ASIPlayerController()
 }
 
 void ASIPlayerController::BeginPlay() {
+
+	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("CamaraSET")));
 	// Set the camera tagged as "MainCamera" as the view target.
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), m_mainCameraTag, m_cameras);
 	if (m_cameras.Num() > 0)

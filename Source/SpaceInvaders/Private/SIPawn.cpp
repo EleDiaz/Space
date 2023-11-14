@@ -13,22 +13,20 @@
 #include "Kismet/GameplayStatics.h"
 
 
-
 // Sets default values
 ASIPawn::ASIPawn()
-	: pointsPerInvader { 100 },
-	pointsPerSquad{ 1000 },
-	velocity{ 1000 },
-	bulletVelocity{ 3000 },
-	AudioShoot{}, //nullptr if(AudioShoot)
-	AudioExplosion{},
-	bFrozen{ false },
-	bPause{ false },
-	MyGameMode{},
-	playerLifes{ 3 },
-	playerPoints{ 0 }
+	: pointsPerInvader{100},
+	  pointsPerSquad{1000},
+	  velocity{1000},
+	  bulletVelocity{3000},
+	  AudioShoot{}, //nullptr if(AudioShoot)
+	  AudioExplosion{},
+	  bFrozen{false},
+	  bPause{false},
+	  MyGameMode{},
+	  playerLifes{3},
+	  playerPoints{0}
 {
-	
 	PrimaryActorTick.bCanEverTick = true;
 
 	SetStaticMesh(); // Default mesh (SetStaticMesh with no arguments)
@@ -36,25 +34,26 @@ ASIPawn::ASIPawn()
 	// Audio component
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>("Audio");
 	AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
-
-
 }
 
 // Set a static mesh.
-void ASIPawn::SetStaticMesh(UStaticMesh* staticMesh, FString path, FVector scale) {
+void ASIPawn::SetStaticMesh(UStaticMesh* staticMesh, FString path, FVector scale)
+{
 	UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
 	const TCHAR* tpath;
 	tpath = ASIPawn::defaultStaticMeshPath; // default route
 	if (!Mesh) // No Mesh component
 		return;
 
-	if (!staticMesh) {
+	if (!staticMesh)
+	{
 		if (!path.IsEmpty())
 			tpath = *path;
 		auto MeshAsset = ConstructorHelpers::FObjectFinder<UStaticMesh>(tpath);
 		staticMesh = MeshAsset.Object;
 	}
-	if (staticMesh) {
+	if (staticMesh)
+	{
 		Mesh->SetStaticMesh(staticMesh);
 
 		Mesh->SetRelativeScale3D(FVector(1.0f, 1.0f, 1.0f));
@@ -76,25 +75,23 @@ void ASIPawn::BeginPlay()
 	bulletTemplate->bulletType = BulletType::PLAYER;
 
 	UWorld* TheWorld = GetWorld();
-	if (TheWorld != nullptr) {
+	if (TheWorld != nullptr)
+	{
 		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(TheWorld);
 		MyGameMode = Cast<ASIGameModeBase>(GameMode);
-		if (MyGameMode) {
+		if (MyGameMode)
+		{
 			MyGameMode->InvaderDestroyed.AddUObject(this, &ASIPawn::InvaderDestroyed);
 			MyGameMode->SquadSuccessful.BindUObject(this, &ASIPawn::SquadSuccessful);
-			MyGameMode->NewSquad.AddUObject(this, &ASIPawn::SquadDissolved);
+			MyGameMode->SquadDestroyed.AddUObject(this, &ASIPawn::SquadDissolved);
 		}
 	}
-
-	
-
 }
 
 // Called every frame
 void ASIPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -103,13 +100,11 @@ void ASIPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis(TEXT("SIRight"), this, &ASIPawn::OnMove);
 	PlayerInputComponent->BindAction(TEXT("SIFire"), IE_Pressed, this, &ASIPawn::OnFire);
 	PlayerInputComponent->BindAction(TEXT("SIPause"), IE_Pressed, this, &ASIPawn::OnPause);
-
 }
 
 
-
-void ASIPawn::OnMove(float value) {
-
+void ASIPawn::OnMove(float value)
+{
 	if (bFrozen)
 		return;
 
@@ -121,10 +116,11 @@ void ASIPawn::OnMove(float value) {
 	AddMovementInput(dir, delta);
 }
 
-void ASIPawn::OnFire() {
+void ASIPawn::OnFire()
+{
 	if (bFrozen)
 		return;
-	
+
 	FVector spawnLocation = GetActorLocation();
 	FRotator spawnRotation = GetActorRotation();
 	ABullet* spawnedBullet;
@@ -135,63 +131,72 @@ void ASIPawn::OnFire() {
 	spawnParameters.Template = bulletTemplate;
 	spawnedBullet = Cast<ABullet>(GetWorld()->SpawnActor(bulletClass, &spawnLocation, &spawnRotation, spawnParameters));
 
-	if (AudioComponent != nullptr && AudioShoot != nullptr) {
+	if (AudioComponent != nullptr && AudioShoot != nullptr)
+	{
 		AudioComponent->SetSound(AudioShoot);
 	}
 	AudioComponent->Play();
-
 }
 
-void ASIPawn::OnPause() {
+void ASIPawn::OnPause()
+{
 	bPause = !bPause;
 }
 
 
-int64 ASIPawn::GetPoints() {
+int64 ASIPawn::GetPoints()
+{
 	return this->playerPoints;
-
 }
 
-int32 ASIPawn::GetLifes() {
+int32 ASIPawn::GetLifes()
+{
 	return this->playerLifes;
-
 }
 
-void ASIPawn::NotifyActorBeginOverlap(AActor* OtherActor) {
-
-	if (!bFrozen) {
+void ASIPawn::NotifyActorBeginOverlap(AActor* OtherActor)
+{
+	if (!bFrozen)
+	{
 		// Collision with an enemy
-		if (OtherActor->IsA(ABullet::StaticClass())) { // ABullet::StaticClass() obtengo un puntero a la UCLASS en memoria de Abullet
+		if (OtherActor->IsA(ABullet::StaticClass()))
+		{
+			// ABullet::StaticClass() obtengo un puntero a la UCLASS en memoria de Abullet
 			ABullet* bullet = Cast<ABullet>(OtherActor);
-			if (bullet->bulletType == BulletType::INVADER) {
+			if (bullet->bulletType == BulletType::INVADER)
+			{
 				OtherActor->Destroy();
 				DestroyPlayer();
 			}
 		}
 		// Collision with an invader
-		if (OtherActor->IsA(AInvader::StaticClass())) {
+		if (OtherActor->IsA(AInvader::StaticClass()))
+		{
 			OtherActor->Destroy();
 			DestroyPlayer();
-
 		}
 	}
-
 }
 
-void ASIPawn::DestroyPlayer() {
+void ASIPawn::DestroyPlayer()
+{
 	UWorld* TheWorld;
 	TheWorld = GetWorld();
 
-	if (TheWorld) {
+	if (TheWorld)
+	{
 		bFrozen = true; // Pawn can'tmove or fire while being destroyed
 		--this->playerLifes;
-		UStaticMeshComponent* LocalMeshComponent = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
+		UStaticMeshComponent* LocalMeshComponent = Cast<UStaticMeshComponent>(
+			GetComponentByClass(UStaticMeshComponent::StaticClass()));
 		// Hide Static Mesh Component
-		if (LocalMeshComponent != nullptr) {
+		if (LocalMeshComponent != nullptr)
+		{
 			LocalMeshComponent->SetVisibility(false);
 		}
 		//Audio
-		if (AudioComponent != nullptr && AudioExplosion != nullptr) {
+		if (AudioComponent != nullptr && AudioExplosion != nullptr)
+		{
 			AudioComponent->SetSound(AudioExplosion);
 			AudioComponent->Play();
 		}
@@ -200,41 +205,43 @@ void ASIPawn::DestroyPlayer() {
 	}
 }
 
-void ASIPawn::PostPlayerDestroyed() {
-
+void ASIPawn::PostPlayerDestroyed()
+{
 	// End game
-	if (this->playerLifes == 0) {
+	if (this->playerLifes == 0)
+	{
 		if (MyGameMode)
 			MyGameMode->PlayerZeroLifes.ExecuteIfBound();
 		return;
 	}
 
 	// Regenerate and continue
-	UStaticMeshComponent* LocalMeshComponent = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
+	UStaticMeshComponent* LocalMeshComponent = Cast<UStaticMeshComponent>(
+		GetComponentByClass(UStaticMeshComponent::StaticClass()));
 	// Show Static Mesh Component
-	if (LocalMeshComponent != nullptr) {
+	if (LocalMeshComponent != nullptr)
+	{
 		LocalMeshComponent->SetVisibility(true);
 	}
 	// Unfrozing
 	bFrozen = false;
-
 }
 
 // Delegate responses:
-void ASIPawn::InvaderDestroyed(int32 id) {
+void ASIPawn::InvaderDestroyed(int32 id)
+{
 	this->playerPoints += this->pointsPerInvader;
 }
 
 
-void ASIPawn::SquadSuccessful() {
+void ASIPawn::SquadSuccessful()
+{
 	DestroyPlayer();
 	if (MyGameMode)
-		MyGameMode->NewSquad.Broadcast(this->playerLifes);
+		MyGameMode->SquadDestroyed.Broadcast();
 }
 
-void ASIPawn::SquadDissolved(int32 val) {
-	this->playerPoints += this->pointsPerSquad;
+void ASIPawn::SquadDissolved()
+{
+	playerPoints += pointsPerSquad;
 }
-
-
-

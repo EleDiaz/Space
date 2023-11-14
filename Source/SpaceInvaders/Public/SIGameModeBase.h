@@ -4,16 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "LocationVolume.h"
+
 #include "SIGameModeBase.generated.h"
 
 
 // Delegates of this game:
 DECLARE_DELEGATE(FStandardDelegateSignature)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOneParamMulticastDelegateSignature, int32);
+DECLARE_MULTICAST_DELEGATE(FMulticastDelegateSignature);
 DECLARE_DELEGATE_OneParam(FOneParamDelegateSignature, int32)
 
 /**
- * 
+ *
  */
 UCLASS()
 class SPACEINVADERS_API ASIGameModeBase : public AGameModeBase
@@ -21,15 +24,20 @@ class SPACEINVADERS_API ASIGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 
 public:
-
-
-	FStandardDelegateSignature SquadOnLeftSide; // Invader-> Squad 
+	FStandardDelegateSignature SquadOnLeftSide; // Invader-> Squad
 	FStandardDelegateSignature SquadOnRightSide; // Invader -> Squad
 	FStandardDelegateSignature SquadFinishesDown; // Invader -> Squad
+
+	//
 	FStandardDelegateSignature SquadSuccessful; // Invader -> GameMode, Player
+
 	FOneParamMulticastDelegateSignature InvaderDestroyed; // Invader -> Squad Invader->Player
 
-	FOneParamMulticastDelegateSignature NewSquad; // Squad -> Game Mode, Player 
+	// Squad -> GameMode, Player
+	// Squad Destroyed
+	FMulticastDelegateSignature SquadDestroyed;
+
+	// Player Dies
 	FStandardDelegateSignature PlayerZeroLifes; // Player -> Game Mode
 
 	//------------------------------------------------
@@ -38,45 +46,40 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Level Layout")
 	TSubclassOf<class AInvaderSquad> InvaderSquadClass;
 
-	//------------------------------------------------
-	//Point where the squad is spawned at
-	//---------------------------------------------
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Level Layout")
-	FVector spawnLocation;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Level Layout")
+	ALocationVolume* SpawnableLocation;
 
-	//------------------------------------------------
-	//Layout of the squad: number of rows
-	//-----------------------------------------------
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Level Layout")
-	int32 nInvaderRows;
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Level Layout")
+	ALocationVolume* TopReenterSpawn;
 
-	//-----------------------------------------------
-	//Layout of the squad: number of columns
-	//-----------------------------------------------
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Level Layout")
-	int32 nInvaderCols;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
+	class AInvaderSquad* SquadTemplate;
 
 	ASIGameModeBase();
 
 protected:
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Level Layout")
-	AInvaderSquad* spawnedInvaderSquad;
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
+	AInvaderSquad* SpawnedInvaderSquad;
 
 	virtual void BeginPlay() override;
 
+
 	UFUNCTION(BlueprintCallable)
-	void RegenerateSquad();
+	void CreateSquad();
 
 	// Delegate bindings
 	UFUNCTION(BlueprintCallable)
-	void OnNewSquad(int32 lifes);
+	void OnNewLevel();
+
+	//
+	UFUNCTION(BlueprintCallable)
+	void IncreaseDifficulty();
+
 
 	void EndGame();
 
 
 	UFUNCTION(BlueprintCallable)
 	void OnPlayerZeroLifes();
-
-	
 };

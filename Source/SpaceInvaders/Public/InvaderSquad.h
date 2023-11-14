@@ -8,21 +8,20 @@
 
 enum class InvaderMovementType : uint8;
 
+// TODO: The idea is to have a list possible invaders that we can use
+//       With this list
 UCLASS()
 class SPACEINVADERS_API AInvaderSquad : public AActor
 {
 	GENERATED_BODY()
 
 public:
-
 	AInvaderSquad();
-
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
-
 
 public:
 	//--------------------------------------------------------
@@ -31,21 +30,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class USceneComponent* Root;
 
-	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void Initialize();
+	void UpdateSquadState(float Delta);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdateSquadState(float delta);
+	void SetRows(int32 Rows);
 
 	UFUNCTION(BlueprintCallable)
-	void SetRows(int32 nrows);
-
-	UFUNCTION(BlueprintCallable)
-	void SetCols(int32 ncols);
+	void SetCols(int32 Cols);
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetRows();
@@ -57,54 +52,53 @@ public:
 	int32 GetNumberOfMembers();
 
 protected:
+	// Squad movement
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
+	float HorizontalVelocity;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
-	float horizontalVelocity;
+	float VerticalVelocity;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
-	float verticalVelocity;
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
-	InvaderMovementType state;
+	InvaderMovementType State;
 
 	UPROPERTY(VisibleAnyWhere, BlueprintReadWrite, Category = "Squad movement")
-	InvaderMovementType previousState;
+	InvaderMovementType PreviousState;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
-	float freeJumpRate;
+	float FreeJumpRate;
 
+
+	// Spawner Options
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
-	TSubclassOf<class AInvader> invaderClass;
+	TSubclassOf<class AInvader> InvaderClass;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Squad Spawner")
-	class AInvader* invaderTemplate;
-
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
-	int32 nRows;
+	class AInvader* InvaderTemplate;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
-	int32 nCols;
+	class ALocationVolume* ReenterVolume;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
-	float extraSeparation;
+	class ALocationVolume* LocationVolume;
 
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
+	int32 Rows;
 
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
+	int32 Cols;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
+	float ExtraSeparation;
 
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	class ASIGameModeBase* MyGameMode;
 
-		
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<class AInvader*> SquadMembers;
 
-
 private:
-
-	
-
 	int32 numberOfMembers;
 
 	UPROPERTY(VisibleAnywhere)
@@ -118,13 +112,11 @@ private:
 
 	void RemoveInvader(int32 ind);
 
-
 	// Values for initializing defaults
 	static const int32 defaultNRows = 1;
 	static const int32 defaultNCols = 1;
-	static  constexpr const float defaultHorizontalVelocity = 1000.0f;
-	static  constexpr const float defaultVerticalVelocity = 1000.0f;
-	static  constexpr const float defaultExtraSeparation = 0.0f;
-
-
+	static constexpr float defaultHorizontalVelocity = 1000.0f;
+	static constexpr float defaultVerticalVelocity = 1000.0f;
+	static constexpr float defaultExtraSeparation = 0.0f;
+	static constexpr float defaultPercentVolumeUsage = 0.9;
 };

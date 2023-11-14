@@ -7,7 +7,7 @@
 #include "SIPlayerController.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class SPACEINVADERS_API ASIPlayerController : public APlayerController
@@ -24,5 +24,5 @@ private:
 	UPROPERTY()
 	TArray<class AActor*> m_cameras;
 	FName m_mainCameraTag;
-	
+
 };
