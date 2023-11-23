@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Bullet.h"
+
+#include "Components/AudioComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Sound/SoundCue.h"
 #include "UObject/ConstructorHelpers.h"
 
 
@@ -54,6 +57,15 @@ void ABullet::SetBulletMesh(UStaticMesh* staticMesh, FString path, FVector scale
 	}
 }
 
+void ABullet::Shot()
+{
+		if (AudioComponent != nullptr && AudioShoot != nullptr)
+		{
+			AudioComponent->SetSound(AudioShoot);
+			AudioComponent->Play();
+		}
+}
+
 
 void ABullet::NotifyActorBeginOverlap(AActor* OtherActor) {
 	// Debug
@@ -63,8 +75,4 @@ void ABullet::NotifyActorBeginOverlap(AActor* OtherActor) {
 			Destroy();
 
 }
-
-
-
-
 

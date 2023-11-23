@@ -33,7 +33,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float velocity;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UAudioComponent* AudioComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USoundCue* AudioShoot;
 
 	// Sets default values for this actor's properties
 	ABullet();
@@ -50,6 +55,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetBulletMesh(class UStaticMesh* staticMesh = nullptr, FString path = TEXT(""), FVector scale = FVector(1.0f, 1.0f, 1.0f));
+	
+	void Shot();
 
 private:
 

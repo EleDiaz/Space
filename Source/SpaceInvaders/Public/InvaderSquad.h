@@ -3,20 +3,30 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LocationVolume.h"
 #include "GameFramework/Actor.h"
 #include "InvaderSquad.generated.h"
+
+DECLARE_DELEGATE(FSquadCommandDelegate)
+DECLARE_DELEGATE_OneParam(FSquadMessageDelegate, int32)
 
 enum class InvaderMovementType : uint8;
 
 // TODO: The idea is to have a list possible invaders that we can use
 //       With this list
 UCLASS()
-class SPACEINVADERS_API AInvaderSquad : public AActor
+class SPACEINVADERS_API AInvaderSquad : public AActor	
 {
 	GENERATED_BODY()
 
 public:
 	AInvaderSquad();
+
+	// Squad Command 
+	FSquadCommandDelegate SquadOnLeftSide;
+	FSquadCommandDelegate SquadOnRightSide;
+	FSquadCommandDelegate SquadFinishesDown;
+	FSquadMessageDelegate SquadDestroyed;
 
 protected:
 	// Called when the game starts or when spawned
@@ -24,29 +34,11 @@ protected:
 	virtual void Destroyed() override;
 
 public:
-	//--------------------------------------------------------
-	// Root Scene Component to modify location, rotation,...
-	//--------------------------------------------------------
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class USceneComponent* Root;
-
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateSquadState(float Delta);
-
-	UFUNCTION(BlueprintCallable)
-	void SetRows(int32 Rows);
-
-	UFUNCTION(BlueprintCallable)
-	void SetCols(int32 Cols);
-
-	UFUNCTION(BlueprintCallable)
-	int32 GetRows();
-
-	UFUNCTION(BlueprintCallable)
-	int32 GetCols();
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetNumberOfMembers();
@@ -70,6 +62,16 @@ protected:
 
 
 	// Spawner Options
+	// Classes of Invader varying the difficulty
+	// Each one has a difficulty number associate, that will be used to generate the enemy row
+	// the idea is to use the algorithm of perfect coin change given an amount(difficulty)
+	// we have unlimited kind of of ships(coins)
+	// 1 coin invader (five rows)
+	// 5 coin invader
+	// .... We could always fill with 1 coin invader
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
+	TArray<TSubclassOf<class AInvader>> InvaderClasses;
+	
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
 	TSubclassOf<class AInvader> InvaderClass;
 
@@ -83,12 +85,6 @@ protected:
 	class ALocationVolume* LocationVolume;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
-	int32 Rows;
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
-	int32 Cols;
-
-	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad Spawner")
 	float ExtraSeparation;
 
 
@@ -98,23 +94,26 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TArray<class AInvader*> SquadMembers;
 
+	
 private:
+	// Private Attributes
+	UPROPERTY()
+	class UBillboardComponent* BillboardComponent;
+	
 	int32 numberOfMembers;
 
 	UPROPERTY(VisibleAnywhere)
 	float timeFromLastFreeJump;
 
-	void SquadOnLeftSide();
+	void NextActionSquadSquadOnLeftSide();
 
-	void SquadOnRightSide();
+	void NextActionSquadOnRightSide();
 
-	void SquadFinishesDown();
+	void NextActionSquadFinishesDown();
 
 	void RemoveInvader(int32 ind);
 
 	// Values for initializing defaults
-	static const int32 defaultNRows = 1;
-	static const int32 defaultNCols = 1;
 	static constexpr float defaultHorizontalVelocity = 1000.0f;
 	static constexpr float defaultVerticalVelocity = 1000.0f;
 	static constexpr float defaultExtraSeparation = 0.0f;

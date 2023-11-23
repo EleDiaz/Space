@@ -19,12 +19,12 @@ ASIPawn::ASIPawn()
 	  pointsPerSquad{1000},
 	  velocity{1000},
 	  bulletVelocity{3000},
-	  AudioShoot{}, //nullptr if(AudioShoot)
+	  playerLifes{3}, //nullptr if(AudioShoot)
+	  AudioShoot{},
 	  AudioExplosion{},
 	  bFrozen{false},
 	  bPause{false},
 	  MyGameMode{},
-	  playerLifes{3},
 	  playerPoints{0}
 {
 	PrimaryActorTick.bCanEverTick = true;

@@ -7,11 +7,8 @@
 #include "SIGameModeBase.h"
 
 #include "Math/BoxSphereBounds.h"
-#include "LocationVolume.h"
 #include "Kismet/GameplayStatics.h"
-#include "Components/AudioComponent.h"
-#include "Sound/SoundCue.h"
-
+#include "Components/BillboardComponent.h"
 
 AInvaderSquad::AInvaderSquad()
 	: HorizontalVelocity{AInvaderSquad::defaultHorizontalVelocity}
@@ -19,47 +16,21 @@ AInvaderSquad::AInvaderSquad()
 	  , State{InvaderMovementType::STOP}
 	  , PreviousState{InvaderMovementType::STOP}
 	  , FreeJumpRate{0.0001}
-	  , Rows{AInvaderSquad::defaultNRows}
-	  , Cols{AInvaderSquad::defaultNCols}
 	  , ExtraSeparation(AInvaderSquad::defaultExtraSeparation)
-	  , numberOfMembers{Rows * Cols}
+	  , numberOfMembers{0}
 	  , timeFromLastFreeJump{0.0}
 {
 	// Create Components in actor
-
-	Root = CreateDefaultSubobject<USceneComponent>("Root");
-	RootComponent = Root; // We need a RootComponent to have a base transform
 	PrimaryActorTick.bCanEverTick = true;
-}
 
-
-void AInvaderSquad::SetRows(int32 nrows)
-{
-	this->Rows = nrows;
-	this->numberOfMembers = this->Rows * this->Cols;
-}
-
-void AInvaderSquad::SetCols(int32 ncols)
-{
-	this->Cols = ncols;
-	this->numberOfMembers = this->Rows * this->Cols;
-}
-
-int32 AInvaderSquad::GetRows()
-{
-	return this->Rows;
-}
-
-int32 AInvaderSquad::GetCols()
-{
-	return this->Cols;
+	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>("Billboard");
+	AActor::SetActorHiddenInGame(true);
 }
 
 int32 AInvaderSquad::GetNumberOfMembers()
 {
 	return this->numberOfMembers;
 }
-
 
 // Called when the game starts or when spawned
 void AInvaderSquad::BeginPlay()
@@ -75,10 +46,10 @@ void AInvaderSquad::BeginPlay()
 		MyGameMode = Cast<ASIGameModeBase>(GameMode);
 		if (MyGameMode != nullptr)
 		{
-			MyGameMode->SquadOnRightSide.BindUObject(this, &AInvaderSquad::SquadOnRightSide);
-			MyGameMode->SquadOnLeftSide.BindUObject(this, &AInvaderSquad::SquadOnLeftSide);
-			MyGameMode->SquadFinishesDown.BindUObject(this, &AInvaderSquad::SquadFinishesDown);
-			MyGameMode->InvaderDestroyed.AddUObject(this, &AInvaderSquad::RemoveInvader);
+			SquadOnRightSide.BindUObject(this, &AInvaderSquad::NextActionSquadOnRightSide);
+			SquadOnLeftSide.BindUObject(this, &AInvaderSquad::NextActionSquadSquadOnLeftSide);
+			SquadFinishesDown.BindUObject(this, &AInvaderSquad::NextActionSquadFinishesDown);
+			SquadDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
 		}
 	}
 
@@ -92,22 +63,46 @@ void AInvaderSquad::BeginPlay()
 	{
 		InvaderTemplate = NewObject<AInvader>();
 	}
+	InvaderTemplate->SetInvaderSquad(this);
 
 	//Spawn Invaders
-	FBoxSphereBounds spawnableBounds = LocationVolume->GetBounds();
+	FBoxSphereBounds SpawnableBounds = LocationVolume->GetBounds();
+	FBoxSphereBounds InvaderBounds = InvaderTemplate->Mesh->Bounds;
+	auto Spacing_X = InvaderBounds.BoxExtent.X + ExtraSeparation;
+	auto Spacing_Y = InvaderBounds.BoxExtent.Y + ExtraSeparation;
+	auto min = SpawnableBounds.Origin;
+	auto max = min + SpawnableBounds.BoxExtent;
 
-	// bounds.Origin;
-	// bounds.BoxExtent;
+	auto centerX = Spacing_X / 2 * (FGenericPlatformMath::Fmod(FMath::Abs(max.X - min.X), Spacing_X) /
+		ExtraSeparation);
+	auto centerY = Spacing_Y / 2 * (FGenericPlatformMath::Fmod(FMath::Abs(max.Y - min.Y), Spacing_Y) /
+		Spacing_Y);
 
-	FBoxSphereBounds invaderBounds = InvaderTemplate->Mesh->Bounds;
+	int32 InvadersCount = 0;
+	FVector SpawnLocation;
+	// Invader Forward is opposite to Player Forward (Yaw rotation)
+	FRotator SpawnRotation = FRotator(0.0f, 180.0f, 0.0f);
+	FActorSpawnParameters SpawnParameters;
+	AInvader* SpawnedInvader;
+	
+	for (float i = min.X; i < max.X; i += Spacing_X)
+	{
+		for (float j = min.Y; j < max.Y; j += Spacing_Y)
+		{
+			SpawnLocation = FVector(centerX + i, centerY + j, SpawnableBounds.Origin.Z);
+			SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			SpawnParameters.Template = InvaderTemplate;
+			SpawnedInvader = GetWorld()->SpawnActor<AInvader>(SpawnLocation, SpawnRotation, SpawnParameters);
+			SpawnedInvader->SetPositionInSquad(InvadersCount);
+			++InvadersCount;
+			SquadMembers.Add(SpawnedInvader);
+		}
+	}
 
+	/*
 	auto x = FGenericPlatformMath::FloorToInt(
 		spawnableBounds.BoxExtent.X / (invaderBounds.BoxExtent.X + ExtraSeparation));
 
-	
-
-	FVector actorLocation = GetActorLocation(); // TODO: Remove
-	FVector spawnLocation = actorLocation; // TODO: Remove
 	FRotator spawnRotation = FRotator(0.0f, 180.0f, 0.0f);
 	// Invader Forward is opposite to Player Forward (Yaw rotation)
 	FActorSpawnParameters spawnParameters;
@@ -138,8 +133,8 @@ void AInvaderSquad::BeginPlay()
 
 		spawnLocation.Y += radiusY * 2 + this->ExtraSeparation;
 	}
-
-	this->numberOfMembers = count;
+	*/
+	this->numberOfMembers = InvadersCount;
 
 	this->State = InvaderMovementType::RIGHT;
 }
@@ -204,7 +199,7 @@ void AInvaderSquad::UpdateSquadState(float delta)
 		if (imc)
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Blue, FString::Printf(TEXT("%s on FreeJump"), *(imc->GetName())));
-			survivors[ind]->fireRate *= 100;
+			survivors[ind]->FireRate *= 100;
 			imc->state = InvaderMovementType::FREEJUMP;
 		}
 	}
@@ -214,24 +209,21 @@ void AInvaderSquad::UpdateSquadState(float delta)
 // Handling events
 
 // La escuadra llega al lado derecho
-
-void AInvaderSquad::SquadOnRightSide()
+void AInvaderSquad::NextActionSquadOnRightSide()
 {
 	PreviousState = InvaderMovementType::RIGHT;
 	State = InvaderMovementType::DOWN;
 }
 
 // La escuadra llega al lado izquierdo
-
-void AInvaderSquad::SquadOnLeftSide()
+void AInvaderSquad::NextActionSquadSquadOnLeftSide()
 {
 	PreviousState = InvaderMovementType::LEFT;
 	State = InvaderMovementType::DOWN;
 }
 
 // Cada vez que un invasor completa el movimiento de descenso
-
-void AInvaderSquad::SquadFinishesDown()
+void AInvaderSquad::NextActionSquadFinishesDown()
 {
 	static int32 countActions = 0;
 	++countActions;

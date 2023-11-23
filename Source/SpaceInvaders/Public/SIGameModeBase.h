@@ -53,7 +53,7 @@ public:
 	ALocationVolume* TopReenterSpawn;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
-	class AInvaderSquad* SquadTemplate;
+	class AInvaderSquad *SquadTemplate;
 
 	ASIGameModeBase();
 

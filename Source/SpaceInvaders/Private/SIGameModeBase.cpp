@@ -21,6 +21,7 @@ void ASIGameModeBase::BeginPlay()
 	Super::BeginPlay();
 
 	// Set a default Squad Template (base difficulty ideally)
+	// TODO: Find template in scene
 	if (InvaderSquadClass->IsChildOf<AInvaderSquad>()) {
 		SquadTemplate = NewObject<AInvaderSquad>(this, InvaderSquadClass->GetFName(), RF_NoFlags, InvaderSquadClass.GetDefaultObject());
 	}
@@ -50,7 +51,7 @@ void ASIGameModeBase::CreateSquad()
         FActorSpawnParameters spawnParameters;
 		spawnParameters.Template = SquadTemplate;
 
-		SpawnedInvaderSquad = GetWorld()->SpawnActor<AInvaderSquad>(InvaderSquadClass, spawnParameters);
+		SpawnedInvaderSquad = GetWorld()->SpawnActor<AInvaderSquad>(spawnParameters);
 	}
 }
 
