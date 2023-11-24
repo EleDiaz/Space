@@ -26,11 +26,12 @@ public:
 	FSquadCommandDelegate SquadOnLeftSide;
 	FSquadCommandDelegate SquadOnRightSide;
 	FSquadCommandDelegate SquadFinishesDown;
-	FSquadMessageDelegate SquadDestroyed;
+	FSquadMessageDelegate InvaderDestroyed;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void BuildSquad();
 	virtual void Destroyed() override;
 
 public:
@@ -42,14 +43,19 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetNumberOfMembers();
+	
+	void ReenterFromTop(class AInvader* Invader);
 
-protected:
 	// Squad movement
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
 	float HorizontalVelocity;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
 	float VerticalVelocity;
+
+	// How much do we descend?
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
+	float DescendingAmount;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
 	InvaderMovementType State;
@@ -60,7 +66,7 @@ protected:
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")
 	float FreeJumpRate;
 
-
+protected:
 	// Spawner Options
 	// Classes of Invader varying the difficulty
 	// Each one has a difficulty number associate, that will be used to generate the enemy row
@@ -100,10 +106,10 @@ private:
 	UPROPERTY()
 	class UBillboardComponent* BillboardComponent;
 	
-	int32 numberOfMembers;
+	int32 NumberOfMembers;
 
 	UPROPERTY(VisibleAnywhere)
-	float timeFromLastFreeJump;
+	float TimeFromLastFreeJump;
 
 	void NextActionSquadSquadOnLeftSide();
 
@@ -112,10 +118,4 @@ private:
 	void NextActionSquadFinishesDown();
 
 	void RemoveInvader(int32 ind);
-
-	// Values for initializing defaults
-	static constexpr float defaultHorizontalVelocity = 1000.0f;
-	static constexpr float defaultVerticalVelocity = 1000.0f;
-	static constexpr float defaultExtraSeparation = 0.0f;
-	static constexpr float defaultPercentVolumeUsage = 0.9;
 };

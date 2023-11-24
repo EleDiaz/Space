@@ -40,10 +40,20 @@ AInvader::AInvader()
 	// Because UInvaderMovementComponent is only an Actor Component and not a Scene Component can't Attach To.
 
 	// Audio component
-	AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	AudioComponent->SetupAttachment(RootComponent);
 
 	FireRate = 0.0001f;
 	bFrozen = false;
+}
+
+void AInvader::SetFrozen(bool frozen)
+{
+	this->bFrozen = frozen;
+}
+
+bool AInvader::GetFrozen() const
+{
+	return this->bFrozen;
 }
 
 // Called when the game starts or when spawned
@@ -78,7 +88,6 @@ void AInvader::Tick(float DeltaTime)
 	if (bFrozen)
 	{
 		// Freezing the invader when is shot down
-		MovementComponent->state = InvaderMovementType::STOP;
 		return;
 	}
 	TimeFromLastShot += DeltaTime;
@@ -93,8 +102,7 @@ void AInvader::Tick(float DeltaTime)
 	//Jet sound
 	if (AudioComponent != nullptr && AudioJet != nullptr && MovementComponent != nullptr)
 	{
-		bool bFreeJump = MovementComponent->state == InvaderMovementType::FREEJUMP;
-		if (bFreeJump && !AudioComponent->IsPlaying())
+		if (MovementComponent->bFreeJump && !AudioComponent->IsPlaying())
 		{
 			AudioComponent->SetSound(AudioJet);
 			AudioComponent->Play();
@@ -131,9 +139,6 @@ void AInvader::SetInvaderSquad(AInvaderSquad* Invader)
 
 void AInvader::NotifyActorBeginOverlap(AActor* OtherActor)
 {
-	// Debug
-	//GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Blue, FString::Printf(TEXT("%s entered me"), *(OtherActor->GetName())));
-	FName actorTag;
 	// If it is already a zombie invader nothing happens.
 	if (bFrozen)
 	{
@@ -143,7 +148,6 @@ void AInvader::NotifyActorBeginOverlap(AActor* OtherActor)
 	UWorld* TheWorld = GetWorld();
 	if (TheWorld != nullptr)
 	{
-		bool bFreeJump = MovementComponent->state == InvaderMovementType::FREEJUMP;
 		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(TheWorld);
 		ASIGameModeBase* MyGameMode = Cast<ASIGameModeBase>(GameMode);
 
@@ -154,7 +158,7 @@ void AInvader::NotifyActorBeginOverlap(AActor* OtherActor)
 			if (Bullet->bulletType == BulletType::PLAYER)
 			{
 				OtherActor->Destroy();
-				MyGameMode->InvaderDestroyed.Broadcast(this->PositionInSquad);
+				auto _ = InvaderSquad->InvaderDestroyed.ExecuteIfBound(PositionInSquad);
 				InvaderDestroyed();
 				return;
 			}
@@ -162,28 +166,25 @@ void AInvader::NotifyActorBeginOverlap(AActor* OtherActor)
 			//It's an invader bullet, so it has to be ignored
 		}
 
-		// OVerlap with other Invader is ignored
+		// Overlap with other Invader is ignored
 		if (OtherActor->IsA(AInvader::StaticClass()))
 			return;
 
-		// Overlap with anything in freejump (except invaders and their own bullets) is a silent Destroy.
-		// TODO: Reappear on the top do not destroy
-		if (bFreeJump)
+		// Reappear from top
+		if (MovementComponent->bFreeJump)
 		{
-			
-			MyGameMode->InvaderDestroyed.Broadcast(this->PositionInSquad);
-			Destroy();
+			InvaderSquad->ReenterFromTop(this);
 			return;
 		}
 
 		// Belong to a squad
-		if (InvaderSquad != nullptr)
+		if (InvaderSquad != nullptr && !MovementComponent->bFreeJump)
 		{
-			if (OtherActor->ActorHasTag(LeftSideTag) && !bFreeJump)
+			if (OtherActor->ActorHasTag(LeftSideTag))
 				auto _ = InvaderSquad->SquadOnLeftSide.ExecuteIfBound();
-			else if (OtherActor->ActorHasTag(RightSideTag) && !bFreeJump)
+			else if (OtherActor->ActorHasTag(RightSideTag))
 				auto _ = InvaderSquad->SquadOnRightSide.ExecuteIfBound();
-			else if (OtherActor->ActorHasTag(DownSideTag) && !bFreeJump)
+			else if (OtherActor->ActorHasTag(DownSideTag))
 				auto _ = MyGameMode->SquadSuccessful.ExecuteIfBound(); // Squad wins!
 		}
 	}

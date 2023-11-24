@@ -38,7 +38,7 @@ public:
 	
 		//Lifes
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Defender config")
-		int32 playerLifes;
+		int32 playerLives;
 	
 	//Audios
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Defender config")
@@ -69,7 +69,7 @@ public:
 	int64 GetPoints();
 
 	UFUNCTION(BlueprintCallable)
-	int32 GetLifes();
+	int32 GetLives();
 
 
 protected:

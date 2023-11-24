@@ -94,6 +94,13 @@ public:
 
 	UPROPERTY()
 	class AInvaderSquad* InvaderSquad;
+
+	UFUNCTION()
+	void SetFrozen(bool bFrozen);
+
+	UFUNCTION()
+	bool GetFrozen() const;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -101,7 +108,7 @@ protected:
 private:
 	
 	bool bFrozen;
-	
+
 	UPROPERTY(VisibleInstanceOnly)
 	int32 PositionInSquad = 0;
 
@@ -121,7 +128,6 @@ private:
 	FName DownSideTag;
 
 	// Timer to control waiting after destruction
-	// TODO: not used
 	FTimerHandle TimerHandle;
 
 	UFUNCTION()

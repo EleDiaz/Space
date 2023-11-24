@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "LocationVolume.h"
 
 #include "SIGameModeBase.generated.h"
 
@@ -24,49 +23,19 @@ class SPACEINVADERS_API ASIGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 
 public:
-	FStandardDelegateSignature SquadOnLeftSide; // Invader-> Squad
-	FStandardDelegateSignature SquadOnRightSide; // Invader -> Squad
-	FStandardDelegateSignature SquadFinishesDown; // Invader -> Squad
-
-	//
 	FStandardDelegateSignature SquadSuccessful; // Invader -> GameMode, Player
-
-	FOneParamMulticastDelegateSignature InvaderDestroyed; // Invader -> Squad Invader->Player
-
-	// Squad -> GameMode, Player
-	// Squad Destroyed
 	FMulticastDelegateSignature SquadDestroyed;
-
 	// Player Dies
-	FStandardDelegateSignature PlayerZeroLifes; // Player -> Game Mode
-
-	//------------------------------------------------
-	//Spawned squad
-	//------------------------------------------------
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Level Layout")
-	TSubclassOf<class AInvaderSquad> InvaderSquadClass;
-
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Level Layout")
-	ALocationVolume* SpawnableLocation;
-
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Level Layout")
-	ALocationVolume* TopReenterSpawn;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
-	class AInvaderSquad *SquadTemplate;
+	FStandardDelegateSignature PlayerZeroLives; // Player -> Game Mode
 
 	ASIGameModeBase();
 
 protected:
-
-	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
-	AInvaderSquad* SpawnedInvaderSquad;
+	// Level InvaderSquad
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
+	class AInvaderSquad* SpawnedInvaderSquad;
 
 	virtual void BeginPlay() override;
-
-
-	UFUNCTION(BlueprintCallable)
-	void CreateSquad();
 
 	// Delegate bindings
 	UFUNCTION(BlueprintCallable)
@@ -76,9 +45,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void IncreaseDifficulty();
 
-
 	void EndGame();
-
 
 	UFUNCTION(BlueprintCallable)
 	void OnPlayerZeroLifes();

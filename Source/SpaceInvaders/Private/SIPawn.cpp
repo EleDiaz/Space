@@ -19,7 +19,7 @@ ASIPawn::ASIPawn()
 	  pointsPerSquad{1000},
 	  velocity{1000},
 	  bulletVelocity{3000},
-	  playerLifes{3}, //nullptr if(AudioShoot)
+	  playerLives{3}, //nullptr if(AudioShoot)
 	  AudioShoot{},
 	  AudioExplosion{},
 	  bFrozen{false},
@@ -81,9 +81,9 @@ void ASIPawn::BeginPlay()
 		MyGameMode = Cast<ASIGameModeBase>(GameMode);
 		if (MyGameMode)
 		{
-			MyGameMode->InvaderDestroyed.AddUObject(this, &ASIPawn::InvaderDestroyed);
-			MyGameMode->SquadSuccessful.BindUObject(this, &ASIPawn::SquadSuccessful);
-			MyGameMode->SquadDestroyed.AddUObject(this, &ASIPawn::SquadDissolved);
+			// MyGameMode->InvaderDestroyed.AddUObject(this, &ASIPawn::InvaderDestroyed);
+			// MyGameMode->SquadSuccessful.BindUObject(this, &ASIPawn::SquadSuccessful);
+			// MyGameMode->SquadDestroyed.AddUObject(this, &ASIPawn::SquadDissolved);
 		}
 	}
 }
@@ -121,21 +121,15 @@ void ASIPawn::OnFire()
 	if (bFrozen)
 		return;
 
-	FVector spawnLocation = GetActorLocation();
-	FRotator spawnRotation = GetActorRotation();
-	ABullet* spawnedBullet;
+	FVector SpawnLocation = GetActorLocation();
+	FRotator SpawnRotation = GetActorRotation();
 	bulletTemplate->velocity = bulletVelocity;
 	bulletTemplate->dir = GetActorForwardVector();
-	FActorSpawnParameters spawnParameters;
-	spawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	spawnParameters.Template = bulletTemplate;
-	spawnedBullet = Cast<ABullet>(GetWorld()->SpawnActor(bulletClass, &spawnLocation, &spawnRotation, spawnParameters));
-
-	if (AudioComponent != nullptr && AudioShoot != nullptr)
-	{
-		AudioComponent->SetSound(AudioShoot);
-	}
-	AudioComponent->Play();
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParameters.Template = bulletTemplate;
+	ABullet* Bullet = GetWorld()->SpawnActor<ABullet>(SpawnLocation, SpawnRotation, SpawnParameters);
+	Bullet->Shot();
 }
 
 void ASIPawn::OnPause()
@@ -149,9 +143,9 @@ int64 ASIPawn::GetPoints()
 	return this->playerPoints;
 }
 
-int32 ASIPawn::GetLifes()
+int32 ASIPawn::GetLives()
 {
-	return this->playerLifes;
+	return this->playerLives;
 }
 
 void ASIPawn::NotifyActorBeginOverlap(AActor* OtherActor)
@@ -186,7 +180,7 @@ void ASIPawn::DestroyPlayer()
 	if (TheWorld)
 	{
 		bFrozen = true; // Pawn can'tmove or fire while being destroyed
-		--this->playerLifes;
+		--this->playerLives;
 		UStaticMeshComponent* LocalMeshComponent = Cast<UStaticMeshComponent>(
 			GetComponentByClass(UStaticMeshComponent::StaticClass()));
 		// Hide Static Mesh Component
@@ -208,10 +202,10 @@ void ASIPawn::DestroyPlayer()
 void ASIPawn::PostPlayerDestroyed()
 {
 	// End game
-	if (this->playerLifes == 0)
+	if (this->playerLives == 0)
 	{
 		if (MyGameMode)
-			MyGameMode->PlayerZeroLifes.ExecuteIfBound();
+			MyGameMode->PlayerZeroLives.ExecuteIfBound();
 		return;
 	}
 

@@ -9,9 +9,9 @@
 
 // Sets default values
 ABullet::ABullet()
-	: bulletType{ BulletType::PLAYER },
-	dir {},
-	velocity {}
+	: bulletType{BulletType::PLAYER},
+	  dir{},
+	  velocity{}
 {
 	PrimaryActorTick.bCanEverTick = true;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("BaseMeshComponent");
@@ -35,44 +35,45 @@ void ABullet::Tick(float DeltaTime)
 	FVector location = GetActorLocation();
 	location += DeltaTime * velocity * dir;
 	SetActorLocation(location);
-
 }
 
-void ABullet::SetBulletMesh(UStaticMesh* staticMesh, FString path, FVector scale) {
+void ABullet::SetBulletMesh(UStaticMesh* staticMesh, FString path, FVector scale)
+{
 	const TCHAR* tpath;
 	tpath = ABullet::defaultStaticMeshPath; // default route
 	if (!Mesh) // No Mesh component
 		return;
 
-	if (!staticMesh) {
+	if (!staticMesh)
+	{
 		if (!path.IsEmpty())
 			tpath = *path;
 		auto MeshAsset = ConstructorHelpers::FObjectFinder<UStaticMesh>(tpath);
 		staticMesh = MeshAsset.Object;
 	}
-	if (staticMesh) {
+	if (staticMesh)
+	{
 		Mesh->SetStaticMesh(staticMesh);
 		Mesh->SetRelativeScale3D(scale);
-
 	}
 }
 
 void ABullet::Shot()
 {
-		if (AudioComponent != nullptr && AudioShoot != nullptr)
-		{
-			AudioComponent->SetSound(AudioShoot);
-			AudioComponent->Play();
-		}
+	if (AudioComponent != nullptr && AudioShoot != nullptr)
+	{
+		AudioComponent->SetSound(AudioShoot);
+		AudioComponent->Play();
+	}
 }
 
 
-void ABullet::NotifyActorBeginOverlap(AActor* OtherActor) {
+void ABullet::NotifyActorBeginOverlap(AActor* OtherActor)
+{
 	// Debug
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("%s overlaped me"), *(OtherActor->GetName())));
+	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red,
+	                                 FString::Printf(TEXT("%s overlaped me"), *(OtherActor->GetName())));
 	for (FName tag : autoDestroyTags)
 		if (OtherActor->ActorHasTag(tag))
 			Destroy();
-
 }
-

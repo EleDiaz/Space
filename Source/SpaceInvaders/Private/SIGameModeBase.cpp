@@ -7,58 +7,26 @@
 #include "Kismet/GameplayStatics.h"
 
 ASIGameModeBase::ASIGameModeBase()
-	: SpawnableLocation{}, TopReenterSpawn{}, SquadTemplate{}, SpawnedInvaderSquad{}
+	: SpawnedInvaderSquad{}
 
 {
 	// GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, FString::Printf(TEXT("Nueva escuadra")));
 	DefaultPawnClass = ASIPawn::StaticClass();
 	PlayerControllerClass = ASIPlayerController::StaticClass();
-	InvaderSquadClass = AInvaderSquad::StaticClass();
 }
 
 void ASIGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Set a default Squad Template (base difficulty ideally)
-	// TODO: Find template in scene
-	if (InvaderSquadClass->IsChildOf<AInvaderSquad>()) {
-		SquadTemplate = NewObject<AInvaderSquad>(this, InvaderSquadClass->GetFName(), RF_NoFlags, InvaderSquadClass.GetDefaultObject());
-	}
-	else {
-		SquadTemplate = NewObject<AInvaderSquad>();
-	}
-
-	// TODO: Use the spawnableLocation to set the template
-
-	// Spawn a squad of invaders
-	CreateSquad();
-
 	// Delegate bindings:
 	SquadDestroyed.AddUObject(this, &ASIGameModeBase::OnNewLevel);
-	PlayerZeroLifes.BindUObject(this, &ASIGameModeBase::OnPlayerZeroLifes);
-}
-
-void ASIGameModeBase::CreateSquad()
-{
-	if (SpawnedInvaderSquad != nullptr)
-	{
-		SpawnedInvaderSquad->Destroy();
-	}
-
-	if (InvaderSquadClass)
-	{
-        FActorSpawnParameters spawnParameters;
-		spawnParameters.Template = SquadTemplate;
-
-		SpawnedInvaderSquad = GetWorld()->SpawnActor<AInvaderSquad>(spawnParameters);
-	}
+	PlayerZeroLives.BindUObject(this, &ASIGameModeBase::OnPlayerZeroLifes);
 }
 
 void ASIGameModeBase::OnNewLevel()
 {
 	IncreaseDifficulty();
-	CreateSquad();
 }
 
 void ASIGameModeBase::IncreaseDifficulty() {

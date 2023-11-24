@@ -11,14 +11,15 @@
 #include "Components/BillboardComponent.h"
 
 AInvaderSquad::AInvaderSquad()
-	: HorizontalVelocity{AInvaderSquad::defaultHorizontalVelocity}
-	  , VerticalVelocity{AInvaderSquad::defaultVerticalVelocity}
+	: HorizontalVelocity{1000}
+	  , VerticalVelocity{1000}
+      , DescendingAmount{100}
 	  , State{InvaderMovementType::STOP}
 	  , PreviousState{InvaderMovementType::STOP}
-	  , FreeJumpRate{0.0001}
-	  , ExtraSeparation(AInvaderSquad::defaultExtraSeparation)
-	  , numberOfMembers{0}
-	  , timeFromLastFreeJump{0.0}
+	  , FreeJumpRate{10}
+	  , ExtraSeparation{5.0}
+	  , NumberOfMembers{0}
+	  , TimeFromLastFreeJump{0.0}
 {
 	// Create Components in actor
 	PrimaryActorTick.bCanEverTick = true;
@@ -29,7 +30,15 @@ AInvaderSquad::AInvaderSquad()
 
 int32 AInvaderSquad::GetNumberOfMembers()
 {
-	return this->numberOfMembers;
+	return this->NumberOfMembers;
+}
+
+void AInvaderSquad::ReenterFromTop(AInvader* Invader)
+{
+	FVector InvaderLocation = Invader->GetActorLocation();
+	// We could use a new random location inside that reenter volume
+	float XAxis = ReenterVolume->GetActorLocation().X;
+	Invader->SetActorLocation(FVector(XAxis, InvaderLocation.Y, InvaderLocation.Z));
 }
 
 // Called when the game starts or when spawned
@@ -49,7 +58,7 @@ void AInvaderSquad::BeginPlay()
 			SquadOnRightSide.BindUObject(this, &AInvaderSquad::NextActionSquadOnRightSide);
 			SquadOnLeftSide.BindUObject(this, &AInvaderSquad::NextActionSquadSquadOnLeftSide);
 			SquadFinishesDown.BindUObject(this, &AInvaderSquad::NextActionSquadFinishesDown);
-			SquadDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
+			InvaderDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
 		}
 	}
 
@@ -64,8 +73,22 @@ void AInvaderSquad::BeginPlay()
 		InvaderTemplate = NewObject<AInvader>();
 	}
 	InvaderTemplate->SetInvaderSquad(this);
+	BuildSquad();
+}
 
-	//Spawn Invaders
+void AInvaderSquad::BuildSquad()
+{
+	// Clean a possible squad
+	if (!SquadMembers.IsEmpty())
+	{
+		for (auto SquadMember : SquadMembers)
+		{
+			if (SquadMember != nullptr)
+				SquadMember->Destroy();
+		}
+	}
+	
+	// Spawn Invaders
 	FBoxSphereBounds SpawnableBounds = LocationVolume->GetBounds();
 	FBoxSphereBounds InvaderBounds = InvaderTemplate->Mesh->Bounds;
 	auto Spacing_X = InvaderBounds.BoxExtent.X + ExtraSeparation;
@@ -84,7 +107,7 @@ void AInvaderSquad::BeginPlay()
 	FRotator SpawnRotation = FRotator(0.0f, 180.0f, 0.0f);
 	FActorSpawnParameters SpawnParameters;
 	AInvader* SpawnedInvader;
-	
+
 	for (float i = min.X; i < max.X; i += Spacing_X)
 	{
 		for (float j = min.Y; j < max.Y; j += Spacing_Y)
@@ -94,58 +117,23 @@ void AInvaderSquad::BeginPlay()
 			SpawnParameters.Template = InvaderTemplate;
 			SpawnedInvader = GetWorld()->SpawnActor<AInvader>(SpawnLocation, SpawnRotation, SpawnParameters);
 			SpawnedInvader->SetPositionInSquad(InvadersCount);
+			// We could attach the invaders to the squad to move only one transform
+			// SpawnedInvader->AttachToActor(this, ... , "");
 			++InvadersCount;
 			SquadMembers.Add(SpawnedInvader);
 		}
 	}
-
-	/*
-	auto x = FGenericPlatformMath::FloorToInt(
-		spawnableBounds.BoxExtent.X / (invaderBounds.BoxExtent.X + ExtraSeparation));
-
-	FRotator spawnRotation = FRotator(0.0f, 180.0f, 0.0f);
-	// Invader Forward is opposite to Player Forward (Yaw rotation)
-	FActorSpawnParameters spawnParameters;
-	int32 count = 0;
-	AInvader* spawnedInvader;
-	float radiusX = 0.0f;
-	float radiusY = 0.0f;
-	for (int i = 0; i < this->Cols; i++)
-	{
-		for (int j = 0; j < this->Rows; j++)
-		{
-			//invaderTemplate->SetPositionInSquad(count);
-
-			spawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			spawnParameters.Template = InvaderTemplate;
-			spawnedInvader = GetWorld()->SpawnActor<AInvader>(spawnLocation, spawnRotation, spawnParameters);
-			spawnedInvader->SetPositionInSquad(count);
-			++count;
-			SquadMembers.Add(spawnedInvader);
-			float r = spawnedInvader->GetBoundRadius();
-			if (r > radiusX)
-				radiusX = r;
-			if (r > radiusY)
-				radiusY = r;
-			spawnLocation.X += radiusX * 2 + this->ExtraSeparation;
-		}
-		spawnLocation.X = actorLocation.X;
-
-		spawnLocation.Y += radiusY * 2 + this->ExtraSeparation;
-	}
-	*/
-	this->numberOfMembers = InvadersCount;
-
-	this->State = InvaderMovementType::RIGHT;
+	NumberOfMembers = InvadersCount;
+	State = InvaderMovementType::RIGHT;
 }
 
 void AInvaderSquad::Destroyed()
 {
 	Super::Destroyed();
-	for (AInvader* invader : SquadMembers)
+	for (AInvader* Invader : SquadMembers)
 	{
-		if (invader != nullptr)
-			invader->Destroy();
+		if (Invader != nullptr)
+			Invader->Destroy();
 	}
 }
 
@@ -158,78 +146,57 @@ void AInvaderSquad::Tick(float DeltaTime)
 
 void AInvaderSquad::UpdateSquadState(float delta)
 {
-	TArray<AInvader*> survivors;
+	TArray<AInvader*> Survivors;
 
-	for (auto invader : SquadMembers)
+	// Get all available invaders
+	for (auto Invader : SquadMembers)
 	{
-		//------------------------------------
-		if (invader)
+		if (Invader)
 		{
-			// very important, first nullptr is checked!.
-
-
-			// First, we get de movement component
-			UInvaderMovementComponent* imc = (UInvaderMovementComponent*)invader->GetComponentByClass(
-				UInvaderMovementComponent::StaticClass());
-
-			// Now, its state is updated
-			if (imc)
+			if (const auto InvaderMovement = Invader->GetComponentByClass<UInvaderMovementComponent>())
 			{
-				if (imc->state != InvaderMovementType::FREEJUMP)
-					survivors.Emplace(invader);
-				imc->horizontalVelocity = HorizontalVelocity;
-				imc->verticalVelocity = VerticalVelocity;
-				//imc->isXHorizontal = isXHorizontal;
-				if (imc->state != InvaderMovementType::FREEJUMP)
-					// The state of the squad is copied to the invader state (except for those in FREEJUMP)
-					imc->state = State;
+				if (!InvaderMovement->bFreeJump)
+				{
+					Survivors.Emplace(Invader);
+				}
 			}
 		}
-
-		//------------------------------------
 	}
-	this->timeFromLastFreeJump += delta;
-	float val = FMath::RandRange(0.0f, 1.0f);
-	int32 countSurvivors = survivors.Num();
-	if (countSurvivors > 0 && val < (1.0 - FMath::Exp(-FreeJumpRate * this->timeFromLastFreeJump)))
+	
+	TimeFromLastFreeJump += delta;
+	float Val = FMath::RandRange(0.0f, 1.0f);
+	int32 CountSurvivors = Survivors.Num();
+	if (CountSurvivors > 0 && Val < (1.0 - FMath::Exp(-FreeJumpRate * TimeFromLastFreeJump)))
 	{
-		int32 ind = FMath::RandRange(0, countSurvivors - 1); // Randomly select one of the living invaders
-		UInvaderMovementComponent* imc = (UInvaderMovementComponent*)survivors[ind]->GetComponentByClass(
-			UInvaderMovementComponent::StaticClass());
-		if (imc)
+		int32 Ind = FMath::RandRange(0, CountSurvivors - 1); // Randomly select one of the living invaders
+		
+		if (const auto InvaderMovement = Survivors[Ind]->GetComponentByClass<UInvaderMovementComponent>())
 		{
-			//GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Blue, FString::Printf(TEXT("%s on FreeJump"), *(imc->GetName())));
-			survivors[ind]->FireRate *= 100;
-			imc->state = InvaderMovementType::FREEJUMP;
+			// Survivors[ind]->FireRate *= 100;
+			InvaderMovement->bFreeJump = true;
 		}
 	}
 }
 
-
-// Handling events
-
-// La escuadra llega al lado derecho
 void AInvaderSquad::NextActionSquadOnRightSide()
 {
 	PreviousState = InvaderMovementType::RIGHT;
 	State = InvaderMovementType::DOWN;
 }
 
-// La escuadra llega al lado izquierdo
 void AInvaderSquad::NextActionSquadSquadOnLeftSide()
 {
 	PreviousState = InvaderMovementType::LEFT;
 	State = InvaderMovementType::DOWN;
 }
 
-// Cada vez que un invasor completa el movimiento de descenso
 void AInvaderSquad::NextActionSquadFinishesDown()
 {
-	static int32 countActions = 0;
-	++countActions;
-	if (countActions >= numberOfMembers)
+	static int32 CountActions = 0;
+	++CountActions;
+	if (CountActions >= NumberOfMembers)
 	{
-		countActions = 0;
+		CountActions = 0;
 		switch (PreviousState)
 		{
 		case InvaderMovementType::RIGHT:
@@ -244,12 +211,11 @@ void AInvaderSquad::NextActionSquadFinishesDown()
 	}
 }
 
-
 void AInvaderSquad::RemoveInvader(int32 ind)
 {
 	SquadMembers[ind] = nullptr;
-	--this->numberOfMembers;
-	if (this->numberOfMembers == 0)
+	--this->NumberOfMembers;
+	if (this->NumberOfMembers == 0)
 	{
 		if (MyGameMode != nullptr)
 		{
