@@ -55,15 +55,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetBulletMesh(class UStaticMesh* staticMesh = nullptr, FString path = TEXT(""), FVector scale = FVector(1.0f, 1.0f, 1.0f));
-	
-	void Shot();
+	void Shot() const;
 
 private:
 
 	FName autoDestroyTags[4] = { TEXT("BottomLimit"),TEXT("RightLimit"),TEXT("LeftLimit"),TEXT("TopLimit") };
 	static constexpr const TCHAR* defaultStaticMeshPath = TEXT("StaticMesh'/Engine/BasicShapes/Cube.Cube'");
-
-
-
-
 };

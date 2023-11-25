@@ -9,7 +9,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundCue.h"
-#include "Particles/ParticleSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 // TODO: Need different types of invaders
 
@@ -30,7 +31,6 @@ AInvader::AInvader()
 	// Create Components in actor
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("BaseMeshComponent");
 	MovementComponent = CreateDefaultSubobject<UInvaderMovementComponent>("InvaderMoveComponent");
-	AudioComponent = CreateDefaultSubobject<UAudioComponent>("Audio");
 	RootComponent = Mesh; // We need a RootComponent to have a base transform
 
 	SetInvaderMesh();
@@ -40,7 +40,10 @@ AInvader::AInvader()
 	// Because UInvaderMovementComponent is only an Actor Component and not a Scene Component can't Attach To.
 
 	// Audio component
-	AudioComponent->SetupAttachment(RootComponent);
+	JetAudioComponent = CreateDefaultSubobject<UAudioComponent>("JetAudio");
+	JetAudioComponent->SetupAttachment(RootComponent);
+	ShotAudioComponent = CreateDefaultSubobject<UAudioComponent>("ShotAudio");
+	ShotAudioComponent->SetupAttachment(RootComponent);
 
 	FireRate = 0.0001f;
 	bFrozen = false;
@@ -100,12 +103,12 @@ void AInvader::Tick(float DeltaTime)
 	}
 
 	//Jet sound
-	if (AudioComponent != nullptr && AudioJet != nullptr && MovementComponent != nullptr)
+	if (JetAudioComponent != nullptr && AudioJet != nullptr && MovementComponent != nullptr)
 	{
-		if (MovementComponent->bFreeJump && !AudioComponent->IsPlaying())
+		if (MovementComponent->bFreeJump && !JetAudioComponent->IsPlaying())
 		{
-			AudioComponent->SetSound(AudioJet);
-			AudioComponent->Play();
+			JetAudioComponent->SetSound(AudioJet);
+			JetAudioComponent->Play();
 		}
 	}
 }
@@ -126,7 +129,8 @@ void AInvader::Fire()
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnParameters.Template = BulletTemplate;
 		const auto SpawnedBullet = GetWorld()->SpawnActor<ABullet>(SpawnLocation, SpawnRotation, SpawnParameters);
-		SpawnedBullet->Shot();
+		// SpawnedBullet->Shot();
+		ShotAudio();
 
 		TimeFromLastShot = 0.0f;
 	}
@@ -202,15 +206,15 @@ void AInvader::InvaderDestroyed()
 		{
 			Mesh->SetVisibility(false);
 		}
-		if (PFXExplosion != nullptr)
+		if (IsValid(NFXExplosion))
 		{
-			UGameplayStatics::SpawnEmitterAtLocation(TheWorld, PFXExplosion, this->GetActorTransform(), true);
+			UNiagaraFunctionLibrary::SpawnSystemAttached(NFXExplosion, RootComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::KeepRelativeOffset, true);
 		}
 		//Audio
-		if (AudioComponent != nullptr && AudioExplosion != nullptr)
+		if (JetAudioComponent != nullptr && AudioExplosion != nullptr)
 		{
-			AudioComponent->SetSound(AudioExplosion);
-			AudioComponent->Play();
+			JetAudioComponent->SetSound(AudioExplosion);
+			JetAudioComponent->Play();
 		}
 		// Wait:
 		TheWorld->GetTimerManager().SetTimer(TimerHandle, this, &AInvader::PostInvaderDestroyed, 2.0f, false);
@@ -244,5 +248,14 @@ void AInvader::SetInvaderMesh(UStaticMesh* newStaticMesh, const FString path, FV
 		// FBoxSphereBounds meshBounds = Mesh->Bounds;
 		// BoundOrigin = meshBounds.Origin;
 		// BoundRadius = meshBounds.SphereRadius;
+	}
+}
+
+void AInvader::ShotAudio() const
+{
+	if (ShotAudioComponent != nullptr && AudioShoot != nullptr)
+	{
+		ShotAudioComponent->SetSound(AudioShoot);
+		ShotAudioComponent->Play();
 	}
 }

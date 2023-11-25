@@ -22,6 +22,12 @@ struct FPlayerScore
         Score = 0;
         Name = TEXT("Unamed hero");
     }
+	
+    FPlayerScore(int32 score, FString name)
+    {
+        Score = score;
+        Name = name;
+    }
 };
 
 

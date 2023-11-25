@@ -15,9 +15,7 @@
 
 // Sets default values
 ASIPawn::ASIPawn()
-	: pointsPerInvader{100},
-	  pointsPerSquad{1000},
-	  velocity{1000},
+	: velocity{1000},
 	  bulletVelocity{3000},
 	  playerLives{3}, //nullptr if(AudioShoot)
 	  AudioShoot{},
@@ -32,8 +30,10 @@ ASIPawn::ASIPawn()
 	SetStaticMesh(); // Default mesh (SetStaticMesh with no arguments)
 
 	// Audio component
-	AudioComponent = CreateDefaultSubobject<UAudioComponent>("Audio");
-	AudioComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	ExplosionAudioComponent = CreateDefaultSubobject<UAudioComponent>("ExplosionAudio");
+	ExplosionAudioComponent->SetupAttachment(RootComponent);
+	ShotAudioComponent = CreateDefaultSubobject<UAudioComponent>("ShotAudioComponent");
+	ShotAudioComponent->SetupAttachment(RootComponent);
 }
 
 // Set a static mesh.
@@ -68,24 +68,14 @@ void ASIPawn::BeginPlay()
 
 	// Generate a Bullet Template of the correct class
 	if (bulletClass->IsChildOf<ABullet>())
-		bulletTemplate = NewObject<ABullet>(this, bulletClass);
+		bulletTemplate = NewObject<ABullet>(this, bulletClass->GetFName(), RF_NoFlags, bulletClass.GetDefaultObject());
 	else
-		bulletTemplate = NewObject<ABullet>(this);
+		bulletTemplate = NewObject<ABullet>();
 
 	bulletTemplate->bulletType = BulletType::PLAYER;
 
-	UWorld* TheWorld = GetWorld();
-	if (TheWorld != nullptr)
-	{
-		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(TheWorld);
-		MyGameMode = Cast<ASIGameModeBase>(GameMode);
-		if (MyGameMode)
-		{
-			// MyGameMode->InvaderDestroyed.AddUObject(this, &ASIPawn::InvaderDestroyed);
-			// MyGameMode->SquadSuccessful.BindUObject(this, &ASIPawn::SquadSuccessful);
-			// MyGameMode->SquadDestroyed.AddUObject(this, &ASIPawn::SquadDissolved);
-		}
-	}
+	AGameModeBase* GameMode = UGameplayStatics::GetGameMode(GetWorld());
+	MyGameMode = Cast<ASIGameModeBase>(GameMode);
 }
 
 // Called every frame
@@ -116,6 +106,15 @@ void ASIPawn::OnMove(float value)
 	AddMovementInput(dir, delta);
 }
 
+void ASIPawn::ShotAudio()
+{
+	if (ShotAudioComponent != nullptr && AudioShoot != nullptr)
+	{
+		ShotAudioComponent->SetSound(AudioShoot);
+		ShotAudioComponent->Play();
+	}
+}
+
 void ASIPawn::OnFire()
 {
 	if (bFrozen)
@@ -129,7 +128,7 @@ void ASIPawn::OnFire()
 	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParameters.Template = bulletTemplate;
 	ABullet* Bullet = GetWorld()->SpawnActor<ABullet>(SpawnLocation, SpawnRotation, SpawnParameters);
-	Bullet->Shot();
+	ShotAudio();
 }
 
 void ASIPawn::OnPause()
@@ -189,10 +188,10 @@ void ASIPawn::DestroyPlayer()
 			LocalMeshComponent->SetVisibility(false);
 		}
 		//Audio
-		if (AudioComponent != nullptr && AudioExplosion != nullptr)
+		if (ExplosionAudioComponent != nullptr && AudioExplosion != nullptr)
 		{
-			AudioComponent->SetSound(AudioExplosion);
-			AudioComponent->Play();
+			ExplosionAudioComponent->SetSound(AudioExplosion);
+			ExplosionAudioComponent->Play();
 		}
 		// Wait:
 		TheWorld->GetTimerManager().SetTimer(timerHandle, this, &ASIPawn::PostPlayerDestroyed, 3.0f, false);
@@ -219,23 +218,4 @@ void ASIPawn::PostPlayerDestroyed()
 	}
 	// Unfrozing
 	bFrozen = false;
-}
-
-// Delegate responses:
-void ASIPawn::InvaderDestroyed(int32 id)
-{
-	this->playerPoints += this->pointsPerInvader;
-}
-
-
-void ASIPawn::SquadSuccessful()
-{
-	DestroyPlayer();
-	if (MyGameMode)
-		MyGameMode->SquadDestroyed.Broadcast();
-}
-
-void ASIPawn::SquadDissolved()
-{
-	playerPoints += pointsPerSquad;
 }

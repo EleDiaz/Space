@@ -14,11 +14,14 @@ ABullet::ABullet()
 	  velocity{}
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("BaseMeshComponent");
 
 	RootComponent = Mesh; // We need a RootComponent to have a base transform
 	SetBulletMesh();
 
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>("Audio");
+	AudioComponent->SetupAttachment(RootComponent);
 	// Bullets will overlap, blocking behaviour is not desirable
 	Mesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 }
@@ -27,6 +30,7 @@ ABullet::ABullet()
 void ABullet::BeginPlay()
 {
 	Super::BeginPlay();
+	AudioComponent->SetSound(AudioShoot);
 }
 
 void ABullet::Tick(float DeltaTime)
@@ -58,9 +62,11 @@ void ABullet::SetBulletMesh(UStaticMesh* staticMesh, FString path, FVector scale
 	}
 }
 
-void ABullet::Shot()
+void ABullet::Shot() const
 {
-	if (AudioComponent != nullptr && AudioShoot != nullptr)
+	// TODO: This gives a null pointer due to actor being destroy while playing the audio
+	//       Also this remove some replicate code in invader and Player
+	if (IsValid(AudioComponent) && IsValid(AudioShoot))
 	{
 		AudioComponent->SetSound(AudioShoot);
 		AudioComponent->Play();
@@ -75,5 +81,7 @@ void ABullet::NotifyActorBeginOverlap(AActor* OtherActor)
 	                                 FString::Printf(TEXT("%s overlaped me"), *(OtherActor->GetName())));
 	for (FName tag : autoDestroyTags)
 		if (OtherActor->ActorHasTag(tag))
+		{
 			Destroy();
+		}
 }

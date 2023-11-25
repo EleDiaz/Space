@@ -10,17 +10,18 @@ UScoreData::UScoreData(): scores{}, MaxSize(10) {
 
 
 void UScoreData::AddItem(UPARAM() FPlayerScore PlayerScore) {
+    scores.Add(PlayerScore);
 
-    auto swappingTerm = PlayerScore;
-    for (size_t i = 0; i < scores.Num(); i++)
-    {
-        if (scores[i].Score < swappingTerm.Score) {
-            auto aux = scores[i];
-            scores[i] = swappingTerm;
-            swappingTerm = aux;
-        }
-    }
-
+    // TODO: Sorting the value
+    // auto swappingTerm = PlayerScore;
+    // for (size_t i = 0; i < scores.Num(); i++)
+    // {
+    //     if (scores[i].Score < swappingTerm.Score) {
+    //         auto aux = scores[i];
+    //         scores[i] = swappingTerm;
+    //         swappingTerm = aux;
+    //     }
+    // }
 
     if (scores.Num() > MaxSize) {
         scores.Pop();

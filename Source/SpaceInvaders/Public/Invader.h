@@ -24,7 +24,10 @@ public:
 	// In case of need simultaneous sounds playing just create those
 	// components
 	UPROPERTY()
-	class UAudioComponent* AudioComponent;
+	class UAudioComponent* JetAudioComponent;
+	
+	UPROPERTY()
+	class UAudioComponent* ShotAudioComponent;
 	//~ End Components
 
 	//~ Begin Invader attributes
@@ -50,7 +53,6 @@ public:
 
 	//
 	//~ Begin Audio
-	// TODO: move the bullet instance, (this allow us to not necessarily change the audio clip but its audio effects)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio Invader")
 	class USoundCue* AudioShoot;
 	
@@ -63,10 +65,10 @@ public:
 
 	//~ Begin Particles
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UParticleSystem* PFXExplosion;
+	class UNiagaraSystem* NFXExplosion;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UParticleSystem* PFXShot;
+	class UNiagaraSystem* NFXShot;
 	//~ End Particles
 
 	// Sets default values for this actor's properties
@@ -88,6 +90,8 @@ public:
 	void SetInvaderMesh(class UStaticMesh* staticMesh = nullptr, const FString path = TEXT(""),
 	                    FVector scale = FVector(1.0f, 1.0f, 1.0f));
 
+	void ShotAudio() const;
+	
 	UFUNCTION(BlueprintCallable)
 	void Fire();
 	void SetInvaderSquad(AInvaderSquad* InvaderSquad);

@@ -41,6 +41,12 @@ void AInvaderSquad::ReenterFromTop(AInvader* Invader)
 	Invader->SetActorLocation(FVector(XAxis, InvaderLocation.Y, InvaderLocation.Z));
 }
 
+void AInvaderSquad::IncreaseLevel()
+{
+	// TODO
+}
+
+
 // Called when the game starts or when spawned
 void AInvaderSquad::BeginPlay()
 {
@@ -87,14 +93,20 @@ void AInvaderSquad::BuildSquad()
 				SquadMember->Destroy();
 		}
 	}
+	if (LocationVolume == nullptr || InvaderTemplate == nullptr)
+		return;
 	
 	// Spawn Invaders
 	FBoxSphereBounds SpawnableBounds = LocationVolume->GetBounds();
-	FBoxSphereBounds InvaderBounds = InvaderTemplate->Mesh->Bounds;
-	auto Spacing_X = InvaderBounds.BoxExtent.X + ExtraSeparation;
-	auto Spacing_Y = InvaderBounds.BoxExtent.Y + ExtraSeparation;
-	auto min = SpawnableBounds.Origin;
-	auto max = min + SpawnableBounds.BoxExtent;
+	// Due to the Invader scale is tweaked the bounding box are way bigger that what it should be
+	auto InvaderScale = InvaderTemplate->Mesh->GetComponentScale();
+	auto InvaderBounds = InvaderTemplate->Mesh->Bounds.BoxExtent * InvaderScale * 2;
+	//OGEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("X %f Y %f "), InvaderBounds.Origin.X, InvaderBounds.Origin.Z));	
+	
+	auto Spacing_X = (InvaderBounds.X) + ExtraSeparation;
+	auto Spacing_Y = (InvaderBounds.Y) + ExtraSeparation;
+	auto min = SpawnableBounds.Origin - SpawnableBounds.BoxExtent;
+	auto max = SpawnableBounds.Origin + SpawnableBounds.BoxExtent;
 
 	auto centerX = Spacing_X / 2 * (FGenericPlatformMath::Fmod(FMath::Abs(max.X - min.X), Spacing_X) /
 		ExtraSeparation);
@@ -137,6 +149,40 @@ void AInvaderSquad::Destroyed()
 	}
 }
 
+void AInvaderSquad::OnConstruction(const FTransform& Transform)
+{
+	
+
+	UWorld* TheWorld = GetWorld();
+
+	// Bind to delegates
+	if (TheWorld != nullptr)
+	{
+		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(TheWorld);
+		MyGameMode = Cast<ASIGameModeBase>(GameMode);
+		if (MyGameMode != nullptr)
+		{
+			SquadOnRightSide.BindUObject(this, &AInvaderSquad::NextActionSquadOnRightSide);
+			SquadOnLeftSide.BindUObject(this, &AInvaderSquad::NextActionSquadSquadOnLeftSide);
+			SquadFinishesDown.BindUObject(this, &AInvaderSquad::NextActionSquadFinishesDown);
+			InvaderDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
+		}
+	}
+
+	// Set Invader Template with Default Value for invaderClass
+	if (InvaderClass->IsChildOf<AInvader>())
+	{
+		InvaderTemplate = NewObject<AInvader>(this, InvaderClass->GetFName(), RF_NoFlags,
+		                                      InvaderClass.GetDefaultObject());
+	}
+	else
+	{
+		InvaderTemplate = NewObject<AInvader>();
+	}
+	InvaderTemplate->SetInvaderSquad(this);
+	BuildSquad();
+}
+
 // Called every frame
 void AInvaderSquad::Tick(float DeltaTime)
 {
@@ -166,7 +212,7 @@ void AInvaderSquad::UpdateSquadState(float delta)
 	TimeFromLastFreeJump += delta;
 	float Val = FMath::RandRange(0.0f, 1.0f);
 	int32 CountSurvivors = Survivors.Num();
-	if (CountSurvivors > 0 && Val < (1.0 - FMath::Exp(-FreeJumpRate * TimeFromLastFreeJump)))
+	if (CountSurvivors > 0 && Val < (1.0 - FMath::Exp(-2.72 * TimeFromLastFreeJump/FreeJumpRate)))
 	{
 		int32 Ind = FMath::RandRange(0, CountSurvivors - 1); // Randomly select one of the living invaders
 		
@@ -213,6 +259,10 @@ void AInvaderSquad::NextActionSquadFinishesDown()
 
 void AInvaderSquad::RemoveInvader(int32 ind)
 {
+	if (IsValid(MyGameMode))
+	{
+		auto _ = MyGameMode->InvaderDestroyed.ExecuteIfBound();
+	}
 	SquadMembers[ind] = nullptr;
 	--this->NumberOfMembers;
 	if (this->NumberOfMembers == 0)

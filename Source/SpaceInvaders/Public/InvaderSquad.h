@@ -31,12 +31,16 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	void BuildSquad();
 	virtual void Destroyed() override;
 
 public:
+	virtual void OnConstruction(const FTransform& Transform) override;
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+	UFUNCTION(BlueprintCallable)
+	void BuildSquad();
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateSquadState(float Delta);
@@ -45,6 +49,7 @@ public:
 	int32 GetNumberOfMembers();
 	
 	void ReenterFromTop(class AInvader* Invader);
+	void IncreaseLevel();
 
 	// Squad movement
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Squad movement")

@@ -23,13 +23,25 @@ class SPACEINVADERS_API ASIGameModeBase : public AGameModeBase
 	GENERATED_BODY()
 
 public:
-	FStandardDelegateSignature SquadSuccessful; // Invader -> GameMode, Player
+	FStandardDelegateSignature SquadSuccessful;
+	FStandardDelegateSignature InvaderDestroyed;
 	FMulticastDelegateSignature SquadDestroyed;
 	// Player Dies
-	FStandardDelegateSignature PlayerZeroLives; // Player -> Game Mode
+	FStandardDelegateSignature PlayerZeroLives;
 
 	ASIGameModeBase();
 
+	//Points per invader
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Defender config")
+	int32 PointsPerInvader;
+
+	//Points per squad
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Defender config")
+	int32 PointsPerSquad;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly)
+	int32 PlayerPoints;
+	
 protected:
 	// Level InvaderSquad
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Level Layout")
@@ -41,9 +53,7 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void OnNewLevel();
 
-	//
-	UFUNCTION(BlueprintCallable)
-	void IncreaseDifficulty();
+	void IncreaseScore();
 
 	void EndGame();
 
