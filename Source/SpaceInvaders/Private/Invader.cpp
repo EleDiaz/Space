@@ -93,7 +93,7 @@ void AInvader::Tick(float DeltaTime)
 
 	// Fire, and as the time goes the change to start firing increase exponentially
 	float val = FMath::RandRange(0.0f, 1.0f);
-	if (val < 1.0 - FMath::Exp(-(2.72 * TimeFromLastShot) / FireRate))
+	if (val < 1.0 - FMath::Exp(-TimeFromLastShot * DeltaTime / FireRate))
 	{
 		Fire();
 	}

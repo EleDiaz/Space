@@ -71,7 +71,7 @@ void UInvaderMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	// Down movement: this is an automatic movement that has to finish automatically
 	// It is based on an internal variable, descendingProgress, that is updated.
 	case InvaderMovementType::DOWN:
-		// TODO: This looks quite bad, in terms of performance if we had 1 million ship, all of them will send this
+		// TODO: This looks quite bad, in terms of performance if we had 1 million ships, all of them will send this
 		//       All ships share same speed, and probably the engine could give the same delta time to each actor.
 		if (descendingProgress > InvaderSquad->DescendingAmount)
 		{

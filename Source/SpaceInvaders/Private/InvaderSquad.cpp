@@ -41,7 +41,8 @@ void AInvaderSquad::ReenterFromTop(AInvader* Invader)
 
 void AInvaderSquad::IncreaseLevel()
 {
-	// TODO
+	FreeJumpRate *= 0.9;
+	InvaderTemplate->FireRate = InvaderTemplate->FireRate * 0.9;
 }
 
 
@@ -200,7 +201,7 @@ void AInvaderSquad::UpdateSquadState(float delta)
 	TimeFromLastFreeJump += delta;
 	float Val = FMath::RandRange(0.0f, 1.0f);
 	int32 CountSurvivors = Survivors.Num();
-	if (CountSurvivors > 0 && Val < (1.0 - FMath::Exp(-2.72 * TimeFromLastFreeJump/FreeJumpRate)))
+	if (CountSurvivors > 0 && Val < (1.0 - FMath::Exp(- TimeFromLastFreeJump * delta /FreeJumpRate)))
 	{
 		int32 Ind = FMath::RandRange(0, CountSurvivors - 1); // Randomly select one of the living invaders
 		
