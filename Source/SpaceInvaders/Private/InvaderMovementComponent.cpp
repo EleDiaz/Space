@@ -96,8 +96,14 @@ void UInvaderMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 void UInvaderMovementComponent::GetCurve(float delta)
 {
-	auto Location = Invader->GetActorLocation();
+	// auto Location = Invader->GetActorLocation();
+	// auto rotation = FRotator::MakeFromEuler(UE::Math::TVector<double>(0.0f, 10.0f, 0));
+	// rotation.RotateVector()
+	// FRotator rotation = FRotator(0.0f, -(theta * 180.0f / PI) - 90, 0.0f);
+	//
+	//
 	
+// 				FQuat newQuaternion = rotation.Quaternion() * initialQuaternion;
 	
 	
 }

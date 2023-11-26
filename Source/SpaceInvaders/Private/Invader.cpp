@@ -65,11 +65,7 @@ void AInvader::BeginPlay()
 	Super::BeginPlay();
 
 	// Generate a Bullet Template of the correct class
-	if (BulletClass->IsChildOf<ABullet>())
-		BulletTemplate = NewObject<ABullet>(this, BulletClass->GetFName(), RF_NoFlags, BulletClass.GetDefaultObject());
-	else
-		BulletTemplate = NewObject<ABullet>();
-
+	BulletTemplate = NewObject<ABullet>(this, BulletClass);
 	BulletTemplate->bulletType = BulletType::INVADER;
 }
 
@@ -128,7 +124,7 @@ void AInvader::Fire()
 		FActorSpawnParameters SpawnParameters;
 		SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnParameters.Template = BulletTemplate;
-		const auto SpawnedBullet = GetWorld()->SpawnActor<ABullet>(SpawnLocation, SpawnRotation, SpawnParameters);
+		const auto SpawnedBullet = GetWorld()->SpawnActor<ABullet>(BulletClass, SpawnLocation, SpawnRotation, SpawnParameters);
 		// SpawnedBullet->Shot();
 		ShotAudio();
 

@@ -1,6 +1,4 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "InvaderSquad.h"
 #include "InvaderMovementComponent.h"
 #include "Invader.h"
@@ -53,7 +51,7 @@ void AInvaderSquad::BeginPlay()
 	Super::BeginPlay();
 
 	UWorld* TheWorld = GetWorld();
-
+	
 	// Bind to delegates
 	if (TheWorld != nullptr)
 	{
@@ -67,17 +65,9 @@ void AInvaderSquad::BeginPlay()
 			InvaderDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
 		}
 	}
-
+	
 	// Set Invader Template with Default Value for invaderClass
-	if (InvaderClass->IsChildOf<AInvader>())
-	{
-		InvaderTemplate = NewObject<AInvader>(this, InvaderClass->GetFName(), RF_NoFlags,
-		                                      InvaderClass.GetDefaultObject());
-	}
-	else
-	{
-		InvaderTemplate = NewObject<AInvader>();
-	}
+	InvaderTemplate = NewObject<AInvader>(this, InvaderClass);
 	InvaderTemplate->SetInvaderSquad(this);
 	BuildSquad();
 }
@@ -92,6 +82,7 @@ void AInvaderSquad::BuildSquad()
 			if (SquadMember != nullptr)
 				SquadMember->Destroy();
 		}
+		SquadMembers.Reset();
 	}
 	if (LocationVolume == nullptr || InvaderTemplate == nullptr)
 		return;
@@ -127,7 +118,7 @@ void AInvaderSquad::BuildSquad()
 			SpawnLocation = FVector(centerX + i, centerY + j, SpawnableBounds.Origin.Z);
 			SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			SpawnParameters.Template = InvaderTemplate;
-			SpawnedInvader = GetWorld()->SpawnActor<AInvader>(SpawnLocation, SpawnRotation, SpawnParameters);
+			SpawnedInvader = GetWorld()->SpawnActor<AInvader>(InvaderClass, SpawnLocation, SpawnRotation, SpawnParameters);
 			SpawnedInvader->SetPositionInSquad(InvadersCount);
 			// We could attach the invaders to the squad to move only one transform
 			// SpawnedInvader->AttachToActor(this, ... , "");
@@ -151,36 +142,33 @@ void AInvaderSquad::Destroyed()
 
 void AInvaderSquad::OnConstruction(const FTransform& Transform)
 {
-	
-
-	UWorld* TheWorld = GetWorld();
-
-	// Bind to delegates
-	if (TheWorld != nullptr)
-	{
-		AGameModeBase* GameMode = UGameplayStatics::GetGameMode(TheWorld);
-		MyGameMode = Cast<ASIGameModeBase>(GameMode);
-		if (MyGameMode != nullptr)
-		{
-			SquadOnRightSide.BindUObject(this, &AInvaderSquad::NextActionSquadOnRightSide);
-			SquadOnLeftSide.BindUObject(this, &AInvaderSquad::NextActionSquadSquadOnLeftSide);
-			SquadFinishesDown.BindUObject(this, &AInvaderSquad::NextActionSquadFinishesDown);
-			InvaderDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
-		}
-	}
-
-	// Set Invader Template with Default Value for invaderClass
-	if (InvaderClass->IsChildOf<AInvader>())
-	{
-		InvaderTemplate = NewObject<AInvader>(this, InvaderClass->GetFName(), RF_NoFlags,
-		                                      InvaderClass.GetDefaultObject());
-	}
-	else
-	{
-		InvaderTemplate = NewObject<AInvader>();
-	}
-	InvaderTemplate->SetInvaderSquad(this);
-	BuildSquad();
+	// UWorld* TheWorld = GetWorld();
+	//
+	// // Bind to delegates
+	// if (TheWorld != nullptr)
+	// {
+	// 	AGameModeBase* GameMode = UGameplayStatics::GetGameMode(TheWorld);
+	// 	MyGameMode = Cast<ASIGameModeBase>(GameMode);
+	// 	if (MyGameMode != nullptr)
+	// 	{
+	// 		SquadOnRightSide.BindUObject(this, &AInvaderSquad::NextActionSquadOnRightSide);
+	// 		SquadOnLeftSide.BindUObject(this, &AInvaderSquad::NextActionSquadSquadOnLeftSide);
+	// 		SquadFinishesDown.BindUObject(this, &AInvaderSquad::NextActionSquadFinishesDown);
+	// 		InvaderDestroyed.BindUObject(this, &AInvaderSquad::RemoveInvader);
+	// 	}
+	// }
+	//
+	// // Set Invader Template with Default Value for invaderClass
+	// if (InvaderClass->IsChildOf<AInvader>())
+	// {
+	// 	InvaderTemplate = NewObject<AInvader>(this, InvaderClass);
+	// }
+	// else
+	// {
+	// 	InvaderTemplate = NewObject<AInvader>();
+	// }
+	// InvaderTemplate->SetInvaderSquad(this);
+	// BuildSquad();
 }
 
 // Called every frame

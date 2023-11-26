@@ -76,9 +76,6 @@ void ABullet::Shot() const
 
 void ABullet::NotifyActorBeginOverlap(AActor* OtherActor)
 {
-	// Debug
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red,
-	                                 FString::Printf(TEXT("%s overlaped me"), *(OtherActor->GetName())));
 	for (FName tag : autoDestroyTags)
 		if (OtherActor->ActorHasTag(tag))
 		{
