@@ -4,33 +4,33 @@
 
 We start from the base game implementation: https://github.com/iestevez/spaceinvaders_ue5
 
-We added some changes to the internal code, removing some boilerplate code, or simplifying some parts.
+We added some changes to the internal code, removing some boilerplate code, or simplifying other parts.
 
 ### InvaderMovementComponent.[h/cpp]
 
-**InvaderMovementComponent** move its owner Actor(AInvader) only taking into account the commands given to the **AInvaderSquad**.
+**InvaderMovementComponent** move its owner Actor(AInvader) only taking into account the commands given from the **AInvaderSquad**.
 Once is set to free through the variable **bJumpFree**, it will stop reacting to those commands.
-In the derived Blueprint **BP_Invader** we added the new logic to do once has reached this state.
+In the derived Blueprint **BP_Invader** we have added the new logic to do once has reached this state.
 
-The logic set before was to create a set of points, that would make a circle path. And the invader will follow keeping the order that were created.
+The logic set before was to create a set of points, that would make a circle path. And the invader will follow those keeping the order that were created.
 This was removed due to the use of splines to define new paths. Those paths could be configured in the editor for each new kind of invader.
 
-![splineinvader.PNG](images%2Fsplineinvader.PNG)
+![splineinvader.PNG](images/splineinvader.PNG)
 
-![spline_setting.PNG](images%2Fspline_setting.PNG)
+![spline_setting.PNG](images/spline_setting.PNG)
 
-After the invader has gone through the spline, it will take the direction of the player, but facing forward to X axis.
+After the invader has gone through the spline, it will take the direction of the player, but facing forward to axis X.
 
-![afterplayer.PNG](images%2Fafterplayer.PNG)
+![afterplayer.PNG](images/afterplayer.PNG)
 
-If the invader fails to kill the player, it will respawn on the top of the screen using the **ReenterVolume**.
+If the invader fails to kill the player, it will respawn at the top of the screen using the **ReenterVolume**.
 
 ### InvaderSquad.[h/cpp]
 
 **InvaderSquad** controls the entire squad of invaders, just like before, but we have change spawn logic making use of **LocationVolume** set in the editor.
-This allows us to set a space where we want to place the invaders, with some separation and it will arrange them in a grid.
+This allows us to set a space where we want to place the invaders, with some separation, and it will arrange them in a grid.
 
-![Squa_properties.PNG](images%2FSqua_properties.PNG)
+![Squa_properties.PNG](images/Squa_properties.PNG)
 
 ```c++
 void AInvaderSquad::BuildSquad()
@@ -82,47 +82,47 @@ void AInvaderSquad::BuildSquad()
 }
 ```
 
-This was set on first place into a **OnConstruction** method, but it crash the editor when trying to compile the Invader blueprint. So, I recommend to not **SpawnActors** in the **OnConstruction** method.
+This was set on first place into a **OnConstruction** method, but it crashes the editor when trying to compile the Invader blueprint. So, I recommend to not **SpawnActors** in the **OnConstruction** method, at least those that are create with BP.
 
 ### Leaderboard
 
 To implement this we create a new **GameInstance** class, that will hold the information of the leaderboard. The information is represented
 in the **UScoreData** class, this allows to easily implement algorithms like sorting in c++ rather than a possible spaghetti blueprint.
 
-![scores.PNG](images%2Fscores.PNG)
+![scores.PNG](images/scores.PNG)
 
 To implement the leaderboard we create a new widget that can be accessed through the Main Menu.
 
-![menu.PNG](images%2Fmenu.PNG)
+![menu.PNG](images/menu.PNG)
 
-This "tab" can be switched using the two events implemented in the BP_MenuHUD.
+This "tab" can be switched using the two events implemented in the **BP_MenuHUD**.
 
-![switchmenu.PNG](images%2Fswitchmenu.PNG)
+![switchmenu.PNG](images/switchmenu.PNG)
 
-The score is represented with a list view, that we fill through the ScoreData in the GameInstance.
+The score is represented with a list view, that we fill through the **ScoreData** in the **GameInstance**.
 
-![updating_scores_to_list.PNG](images%2Fupdating_scores_to_list.PNG)
+![updating_scores_to_list.PNG](images/updating_scores_to_list.PNG)
 
 And for each entry we extract the data to feed the widgets.
 
-![entrylistsetup.PNG](images%2Fentrylistsetup.PNG)
+![entrylistsetup.PNG](images/entrylistsetup.PNG)
 
 ### Lives Icons
 
 Before, Game Hud require an individual setting of the icon visibility. So, each icon have the exact same logic just changing the index.
 This has been simplified into a loop which set the visibility of those icons in one go.
 
-![betterlifeicons.PNG](images%2Fbetterlifeicons.PNG)
+![betterlifeicons.PNG](images/betterlifeicons.PNG)
 
 ### Material
 
-We added a new material to the background, with a parallax effect between stars and nebula clouds
+We added a new material to the background, with a parallax effect using stars and nebula clouds
 
-![back_material.PNG](images%2Fback_material.PNG)
+![back_material.PNG](images/back_material.PNG)
 
 And the effect:
 
-![back_material_effect.PNG](images%2Fback_material_effect.PNG)
+![back_material_effect.PNG](images/back_material_effect.PNG)
 
 ### Niagara Particles
 
@@ -133,12 +133,11 @@ We added a new Niagara System, that gets triggered when the invaders get destroy
 UNiagaraFunctionLibrary::SpawnSystemAttached(NFXExplosion, RootComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::KeepRelativeOffset, true);
 ```
 
-![explosion.PNG](images%2Fexplosion.PNG)
+![explosion.PNG](images/explosion.PNG)
 
 ### Difficulty
 
 We simply increase the difficulty by increasing some spawn values.
-
 
 ```c++
 // InvaderSquad.cpp
@@ -149,10 +148,10 @@ void AInvaderSquad::IncreaseLevel()
 }
 ```
 
-So, to understand why lowering the FreeJumpRate would increase the difficulty, we need to look a the new formula used.
+So, to understand why lowering the FreeJumpRate would increase the difficulty, we need to look at the new formula used.
 `1-e^(-TimeFromLastShot * DeltaTime/ YourRate)`
 
-With this, we can define **YourRate**, as the time that take to trigger. If we set it to 20s, it means that will take around 20s to trigger again.
+With this, we can define **YourRate**, as the time that takes to trigger. If we set it to 20s, it means that will take around 20s to trigger again.
 
 ```c++
 // Invader.cpp
@@ -165,7 +164,7 @@ if (val < 1.0 - FMath::Exp(-TimeFromLastShot * DeltaTime / FireRate))
 // ... omitted
 ```
 
-Another difficulty added was to make reappear the invaders again once, they has gone through the bottom screen. This is for the case of free jump invaders only.
+Another difficulty added, it was to make reappear the invaders again, once they have gone through the bottom screen. This is done only for the case of free jump invaders.
 
 ```c++
 // InvaderSquad.cpp
@@ -178,10 +177,8 @@ void AInvaderSquad::ReenterFromTop(AInvader* Invader)
 }
 ```
 
-
-
 ## In Game
 
-![in_game.PNG](images%2Fin_game.PNG)
+![in_game.PNG](images/in_game.PNG)
 
-![ingame.PNG](images%2Fingame.PNG)
+![ingame.PNG](images/ingame.PNG)
